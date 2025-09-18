@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual - Calculadora de Importação</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 { color: #667eea; text-align: center; margin-bottom: 2rem; }
+        h2 { color: #764ba2; border-bottom: 2px solid #667eea; padding-bottom: 0.5rem; }
+        h3 { color: #555; }
+        .formula { 
+            background: #f8f9fa; 
+            padding: 1rem; 
+            border-left: 4px solid #667eea; 
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+        }
+        .warning { 
+            background: #fff3cd; 
+            border: 1px solid #ffeaa7; 
+            padding: 1rem; 
+            border-radius: 5px; 
+            margin: 1rem 0; 
+        }
+        .success { 
+            background: #d4edda; 
+            border: 1px solid #c3e6cb; 
+            padding: 1rem; 
+            border-radius: 5px; 
+            margin: 1rem 0; 
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 1rem 0; 
+        }
+        table, th, td { 
+            border: 1px solid #ddd; 
+        }
+        th, td { 
+            padding: 0.75rem; 
+            text-align: left; 
+        }
+        th { 
+            background: #667eea; 
+            color: white; 
+        }
+        code { 
+            background: #f8f9fa; 
+            padding: 0.2rem 0.4rem; 
+            border-radius: 3px; 
+            font-family: 'Courier New', monospace; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Manual da Calculadora de Importação</h1>
+        
+        <h2>🎯 Objetivo</h2>
+        <p>Este sistema substitui completamente as planilhas Excel para cálculo de custos de importação, mantendo exatamente as mesmas fórmulas e resultados.</p>
+        
+        <h2>🔢 Fórmulas Implementadas</h2>
+        
+        <h3>Valores Base</h3>
+        <div class="formula">
+            <strong>D = (A + B) × C</strong><br>
+            Total BRL = (Frete + VMLE) × Taxa do Dólar
+        </div>
+        
+        <div class="formula">
+            <strong>F = D + E</strong><br>
+            Base BC = Total BRL + Seguro
+        </div>
+        
+        <h3>Impostos de Importação</h3>
+        <div class="formula">
+            <strong>G = F × 16%</strong><br>
+            Imposto de Importação (II) = Base BC × Alíquota II
+        </div>
+        
+        <div class="formula">
+            <strong>O = Base IPI × 9,75%</strong><br>
+            IPI = (VMLE convertido + II) × Alíquota IPI
+        </div>
+        
+        <h3>PIS e COFINS</h3>
+        <div class="formula">
+            <strong>J = (F × 2,1%) - (F × 1,65%)</strong><br>
+            Custo PIS = PIS Importação - PIS Crédito
+        </div>
+        
+        <div class="formula">
+            <strong>M = (F × 9,65%) - (F × 7,65%)</strong><br>
+            Custo COFINS = COFINS Importação - COFINS Crédito
+        </div>
+        
+        <h3>ICMS</h3>
+        <div class="formula">
+            <strong>Base ICMS = (VMLE + II + IPI + PIS Imp + COFINS Imp + Desp. Aduan) ÷ 0,96</strong><br>
+            <strong>Q = Base ICMS × 2,6%</strong><br>
+            ICMS = Base ICMS × Alíquota ICMS
+        </div>
+        
+        <h3>Totais Finais</h3>
+        <div class="formula">
+            <strong>S = F + G + H + K + O + R</strong><br>
+            Valor Total NF = Base BC + II + PIS Imp + COFINS Imp + IPI + Desp. Aduaneiras
+        </div>
+        
+        <div class="formula">
+            <strong>T = F + G + J + M + N - Q + R</strong><br>
+            Custo Total Real = Base BC + II + Custo PIS + Custo COFINS + Desp. Acessórias - ICMS + Desp. Aduaneiras
+        </div>
+        
+        <h3>Custos Unitários</h3>
+        <div class="formula">
+            <strong>U = T ÷ C</strong><br>
+            Custo Total Dólar = Custo Total Real ÷ Taxa do Dólar
+        </div>
+        
+        <div class="formula">
+            <strong>X = U ÷ V</strong><br>
+            Custo Unitário Dólar = Custo Total Dólar ÷ Quantidade
+        </div>
+        
+        <div class="formula">
+            <strong>Z = X × C</strong><br>
+            Custo Unitário Real = Custo Unitário Dólar × Taxa do Dólar
+        </div>
+        
+        <h2>📝 Campos de Entrada</h2>
+        
+        <table>
+            <tr>
+                <th>Campo</th>
+                <th>Código</th>
+                <th>Descrição</th>
+                <th>Moeda</th>
+                <th>Obrigatório</th>
+            </tr>
+            <tr>
+                <td>Frete</td>
+                <td>A</td>
+                <td>Valor do frete da mercadoria</td>
+                <td>USD</td>
+                <td>✅</td>
+            </tr>
+            <tr>
+                <td>VMLE</td>
+                <td>B</td>
+                <td>Valor da Mercadoria no Local de Embarque</td>
+                <td>USD</td>
+                <td>✅</td>
+            </tr>
+            <tr>
+                <td>Taxa do Dólar</td>
+                <td>C</td>
+                <td>Taxa de câmbio USD/BRL</td>
+                <td>BRL</td>
+                <td>✅</td>
+            </tr>
+            <tr>
+                <td>Seguro</td>
+                <td>E</td>
+                <td>Valor do seguro da importação</td>
+                <td>BRL</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Quantidade</td>
+                <td>V</td>
+                <td>Quantidade de itens importados</td>
+                <td>UN</td>
+                <td>✅</td>
+            </tr>
+            <tr>
+                <td>Despesas Acessórias</td>
+                <td>N</td>
+                <td>Outras despesas da importação</td>
+                <td>BRL</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Despesas Aduaneiras</td>
+                <td>R</td>
+                <td>Taxas portuárias e aduaneiras</td>
+                <td>BRL</td>
+                <td>-</td>
+            </tr>
+        </table>
+        
+        <h2>⚙️ Alíquotas Padrão</h2>
+        
+        <table>
+            <tr>
+                <th>Imposto</th>
+                <th>Alíquota Padrão</th>
+                <th>Observações</th>
+            </tr>
+            <tr>
+                <td>II (Imposto de Importação)</td>
+                <td>16%</td>
+                <td>Varia por NCM</td>
+            </tr>
+            <tr>
+                <td>IPI</td>
+                <td>9,75%</td>
+                <td>Conforme tabela TIPI</td>
+            </tr>
+            <tr>
+                <td>PIS Importação</td>
+                <td>2,1%</td>
+                <td>Fixo para importação</td>
+            </tr>
+            <tr>
+                <td>PIS Crédito</td>
+                <td>1,65%</td>
+                <td>Para empresas do Lucro Real</td>
+            </tr>
+            <tr>
+                <td>COFINS Importação</td>
+                <td>9,65%</td>
+                <td>Fixo para importação</td>
+            </tr>
+            <tr>
+                <td>COFINS Crédito</td>
+                <td>7,65%</td>
+                <td>Para empresas do Lucro Real</td>
+            </tr>
+            <tr>
+                <td>ICMS</td>
+                <td>2,6%</td>
+                <td>Varia por estado/produto</td>
+            </tr>
+        </table>
+        
+        <h2>🚀 Como Usar</h2>
+        
+        <h3>1. Preparação</h3>
+        <ul>
+            <li>Tenha em mãos a fatura comercial (Commercial Invoice)</li>
+            <li>Verifique a taxa de câmbio do dia</li>
+            <li>Consulte as alíquotas específicas do produto (NCM)</li>
+            <li>Obtenha valores de seguro e despesas</li>
+        </ul>
+        
+        <h3>2. Preenchimento</h3>
+        <ol>
+            <li><strong>Valores Principais:</strong> Informe frete e VMLE em USD</li>
+            <li><strong>Taxa do Dólar:</strong> Use a taxa oficial do dia da DI</li>
+            <li><strong>Alíquotas:</strong> Ajuste conforme o NCM do produto</li>
+            <li><strong>Despesas:</strong> Inclua valores adicionais em BRL</li>
+        </ol>
+        
+        <h3>3. Validação</h3>
+        <div class="success">
+            <strong>✅ Dica:</strong> Use o botão "Validar contra Planilha Original" para verificar se os cálculos estão corretos comparando com valores conhecidos.
+        </div>
+        
+        <h2>📊 Interpretando os Resultados</h2>
+        
+        <h3>Valores Base</h3>
+        <ul>
+            <li><strong>Total BRL:</strong> Valor da mercadoria convertido para reais</li>
+            <li><strong>Base BC:</strong> Base de cálculo para impostos federais</li>
+        </ul>
+        
+        <h3>Impostos</h3>
+        <ul>
+            <li><strong>II:</strong> Imposto de Importação a pagar</li>
+            <li><strong>IPI:</strong> Imposto sobre Produtos Industrializados</li>
+            <li><strong>Custo PIS/COFINS:</strong> Valor líquido após créditos</li>
+            <li><strong>ICMS:</strong> Imposto estadual (pode haver diferimento)</li>
+        </ul>
+        
+        <h3>Totais Finais</h3>
+        <ul>
+            <li><strong>Valor Total NF:</strong> Valor para emissão da nota fiscal</li>
+            <li><strong>Custo Total Real:</strong> Custo efetivo da importação</li>
+            <li><strong>Custo Unitário:</strong> Custo por unidade importada</li>
+        </ul>
+        
+        <h2>⚠️ Observações Importantes</h2>
+        
+        <div class="warning">
+            <strong>⚠️ Atenção:</strong>
+            <ul>
+                <li>As alíquotas podem variar conforme o NCM do produto</li>
+                <li>Alguns estados têm diferimento de ICMS</li>
+                <li>Empresas do Simples Nacional não têm direito aos créditos de PIS/COFINS</li>
+                <li>Consulte sempre um despachante ou contador especializado</li>
+            </ul>
+        </div>
+        
+        <h2>📈 Funcionalidades Avançadas</h2>
+        
+        <h3>Histórico de Cálculos</h3>
+        <p>O sistema mantém um histórico dos últimos 50 cálculos realizados, permitindo consulta e comparação.</p>
+        
+        <h3>Relatórios</h3>
+        <p>Geração de relatórios estruturados para documentação e análise dos custos.</p>
+        
+        <h3>Estatísticas</h3>
+        <p>Análise de médias, maiores e menores importações para planejamento financeiro.</p>
+        
+        <h2>🔧 Suporte Técnico</h2>
+        
+        <h3>API Endpoints</h3>
+        <ul>
+            <li><code>POST /api/calcular</code> - Realizar cálculo</li>
+            <li><code>GET /api/historico</code> - Consultar histórico</li>
+            <li><code>GET /api/estatisticas</code> - Obter estatísticas</li>
+            <li><code>POST /api/validar-planilha</code> - Validar cálculos</li>
+        </ul>
+        
+        <div class="success">
+            <strong>✅ Sistema Validado:</strong> Todos os cálculos foram testados contra as planilhas Excel originais e produzem resultados idênticos.
+        </div>
+        
+        <hr>
+        <p style="text-align: center; color: #666; margin-top: 2rem;">
+            <strong>Calculadora de Importação v1.0</strong><br>
+            Desenvolvido para substituir planilhas Excel mantendo total compatibilidade
+        </p>
+    </div>
+</body>
+</html>
