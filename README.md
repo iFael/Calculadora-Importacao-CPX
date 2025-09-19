@@ -1,6 +1,6 @@
 # Calculadora de Importação
 
-Sistema web completo para substituir planilhas Excel de cálculo de custos de importação.
+Sistema web para cálculo de custos de importação.
 
 ## Características
 
