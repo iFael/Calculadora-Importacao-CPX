@@ -3,20 +3,20 @@ import axios from 'axios';
 import './App.css';
 
 interface DadosCalculadora {
-  frete: number;
-  vmle: number;
-  taxaDolar: number;
-  seguro: number;
-  quantidade: number;
-  aliqII: number;
-  aliqIPI: number;
-  aliqPIS: number;
-  aliqCOFINS: number;
-  aliqPISCred: number;
-  aliqCOFINSCred: number;
-  aliqICMS: number;
-  despesasAcessorias: number;
-  despesasAduaneiras: number;
+  frete: number | string;
+  vmle: number | string;
+  taxaDolar: number | string;
+  seguro: number | string;
+  quantidade: number | string;
+  aliqII: number | string;
+  aliqIPI: number | string;
+  aliqPIS: number | string;
+  aliqCOFINS: number | string;
+  aliqPISCred: number | string;
+  aliqCOFINSCred: number | string;
+  aliqICMS: number | string;
+  despesasAcessorias: number | string;
+  despesasAduaneiras: number | string;
 }
 
 interface ResultadoCalculadora {
@@ -46,7 +46,7 @@ interface ResultadoCalculadora {
   custoUnitarioReal: number;
 }
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:6100/api';
 
 function App() {
   const [dados, setDados] = useState<DadosCalculadora>({
@@ -64,6 +64,18 @@ function App() {
     aliqICMS: 2.6,
     despesasAcessorias: 9252.55,
     despesasAduaneiras: 154.23
+  });
+
+  // Estado separado para valores formatados dos campos monetários
+  const [valoresFormatados, setValoresFormatados] = useState<{[key: string]: string}>(() => {
+    return {
+      frete: '1.196,50',
+      vmle: '12.720,00',
+      taxaDolar: '5,5436',
+      seguro: '284,99',
+      despesasAcessorias: '9.252,55',
+      despesasAduaneiras: '154,23'
+    };
   });
 
   const [resultado, setResultado] = useState<ResultadoCalculadora | null>(null);
@@ -99,16 +111,172 @@ function App() {
     }).format(value);
   };
 
+  const getDisplayValue = (campo: keyof DadosCalculadora, value: number | string): string => {
+    // Para campos monetários, usar o valor formatado
+    if (isMonetaryField(campo)) {
+      return valoresFormatados[campo] || '';
+    }
+    
+    // Para outros campos (alíquotas e quantidade), exibir o valor diretamente
+    if (value === '') return '';
+    
+    // Se for número, converter para string mantendo decimais com vírgula
+    if (typeof value === 'number') {
+      return value.toString().replace('.', ',');
+    }
+    
+    // Se for string, manter como está e garantir que use vírgula
+    return String(value).replace('.', ',');
+  };
+
+  // Função para formatar valor monetário brasileiro em tempo real
+  const formatMonetaryValue = (value: string): string => {
+    // Remove tudo que não é dígito
+    const digitsOnly = value.replace(/\D/g, '');
+    
+    // Se estiver vazio, retorna vazio
+    if (!digitsOnly) return '';
+    
+    // Converte para centavos
+    const cents = parseInt(digitsOnly);
+    
+    // Converte centavos para valor decimal
+    const decimalValue = cents / 100;
+    
+    // Formata usando Intl.NumberFormat para o padrão brasileiro
+    return decimalValue.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  // Função para converter valor formatado de volta para número
+  const parseMonetaryValue = (formattedValue: string): number => {
+    if (!formattedValue) return 0;
+    
+    // Remove pontos de milhares e substitui vírgula por ponto
+    const cleanValue = formattedValue
+      .replace(/\./g, '')
+      .replace(',', '.');
+    
+    return parseFloat(cleanValue) || 0;
+  };
+
+  // Função para identificar se um campo é monetário
+  const isMonetaryField = (fieldName: keyof DadosCalculadora): boolean => {
+    const monetaryFields = [
+      'frete', 'vmle', 'taxaDolar', 'seguro', 
+      'despesasAcessorias', 'despesasAduaneiras'
+    ];
+    return monetaryFields.includes(fieldName);
+  };
+
   const handleInputChange = (campo: keyof DadosCalculadora, valor: string) => {
-    const numeroValor = parseFloat(valor) || 0;
-    setDados(prev => ({ ...prev, [campo]: numeroValor }));
+    if (isMonetaryField(campo)) {
+      // Para campos monetários, aplicar formatação
+      // Se o usuário está deletando (valor vazio), limpar o campo
+      if (valor === '') {
+        setValoresFormatados(prev => ({ ...prev, [campo]: '' }));
+        setDados(prev => ({ ...prev, [campo]: 0 }));
+        return;
+      }
+      
+      // Extrair apenas dígitos do valor digitado
+      const novosDigitos = valor.replace(/\D/g, '');
+      
+      // Se não há dígitos, limpar
+      if (!novosDigitos) {
+        setValoresFormatados(prev => ({ ...prev, [campo]: '' }));
+        setDados(prev => ({ ...prev, [campo]: 0 }));
+        return;
+      }
+      
+      // Formatar o valor
+      const valorFormatado = formatMonetaryValue(novosDigitos);
+      const valorNumerico = parseMonetaryValue(valorFormatado);
+      
+      setValoresFormatados(prev => ({ ...prev, [campo]: valorFormatado }));
+      setDados(prev => ({ ...prev, [campo]: valorNumerico }));
+    } else {
+      // Para campos de porcentagem e quantidade, permitir entrada natural de decimais
+      if (valor === '') {
+        setDados(prev => ({ ...prev, [campo]: '' }));
+        return;
+      }
+      
+      // Permitir apenas dígitos, vírgula e ponto
+      let valorLimpo = valor.replace(/[^0-9.,]/g, '');
+      
+      // Se não há caracteres válidos, limpar
+      if (!valorLimpo) {
+        setDados(prev => ({ ...prev, [campo]: '' }));
+        return;
+      }
+      
+      // Normalizar separadores decimais - converter pontos para vírgulas (padrão brasileiro)
+      valorLimpo = valorLimpo.replace(/\./g, ',');
+      
+      // Permitir apenas uma vírgula
+      const partesVirgula = valorLimpo.split(',');
+      if (partesVirgula.length > 2) {
+        // Se há mais de uma vírgula, manter apenas a primeira
+        valorLimpo = partesVirgula[0] + ',' + partesVirgula.slice(1).join('');
+      }
+      
+      // Aplicar lógica de remoção de zeros à esquerda APENAS se:
+      // 1. Começa com zero
+      // 2. Tem mais de um caractere
+      // 3. NÃO é um decimal válido (0,X)
+      // 4. O segundo caractere não é vírgula
+      let valorProcessado = valorLimpo;
+      if (valorProcessado.length > 1 && 
+          valorProcessado.startsWith('0') && 
+          valorProcessado.charAt(1) !== ',') {
+        
+        // Encontrar o primeiro dígito não-zero ou vírgula
+        let indiceInicioValido = 0;
+        for (let i = 0; i < valorProcessado.length; i++) {
+          if (valorProcessado.charAt(i) !== '0') {
+            indiceInicioValido = i;
+            break;
+          }
+        }
+        
+        // Se todos são zeros, manter apenas um zero
+        if (indiceInicioValido === 0 && valorProcessado.replace(/0/g, '').replace(/,/g, '') === '') {
+          valorProcessado = valorProcessado.includes(',') ? valorProcessado : '0';
+        } else if (indiceInicioValido > 0) {
+          valorProcessado = valorProcessado.substring(indiceInicioValido);
+        }
+      }
+      
+      // Aceitar qualquer entrada válida (números, vírgula, parciais)
+      setDados(prev => ({ ...prev, [campo]: valorProcessado }));
+    }
   };
 
   const calcular = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post(`${API_BASE_URL}/calcular`, dados);
+      // Converter strings vazias para números antes de enviar
+      const dadosParaEnvio = Object.keys(dados).reduce((acc, key) => {
+        const valor = dados[key as keyof DadosCalculadora];
+        if (typeof valor === 'string') {
+          if (valor === '') {
+            acc[key as keyof DadosCalculadora] = 0;
+          } else {
+            // Converter vírgula para ponto e tentar converter para número
+            const valorConvertido = parseFloat(valor.replace(',', '.'));
+            acc[key as keyof DadosCalculadora] = isNaN(valorConvertido) ? 0 : valorConvertido;
+          }
+        } else {
+          acc[key as keyof DadosCalculadora] = Number(valor);
+        }
+        return acc;
+      }, {} as any);
+
+      const response = await axios.post(`${API_BASE_URL}/calcular`, dadosParaEnvio);
       if (response.data.success) {
         setResultado(response.data.dados);
       } else {
@@ -146,11 +314,11 @@ function App() {
                 <div className="form-row">
                   <label>
                     Frete (A):
-                    <input type="number" step="0.01" value={dados.frete} onChange={(e) => handleInputChange('frete', e.target.value)} />
+                    <input type="text" value={getDisplayValue('frete', dados.frete)} onChange={(e) => handleInputChange('frete', e.target.value)} />
                   </label>
                   <label>
                     VMLE (B):
-                    <input type="number" step="0.01" value={dados.vmle} onChange={(e) => handleInputChange('vmle', e.target.value)} />
+                    <input type="text" value={getDisplayValue('vmle', dados.vmle)} onChange={(e) => handleInputChange('vmle', e.target.value)} />
                   </label>
                 </div>
               </div>
@@ -160,15 +328,15 @@ function App() {
                 <div className="form-row">
                   <label>
                     Taxa do Dólar (C):
-                    <input type="number" step="0.0001" value={dados.taxaDolar} onChange={(e) => handleInputChange('taxaDolar', e.target.value)} />
+                    <input type="text" value={getDisplayValue('taxaDolar', dados.taxaDolar)} onChange={(e) => handleInputChange('taxaDolar', e.target.value)} />
                   </label>
                   <label>
                     Seguro (E) - BRL:
-                    <input type="number" step="0.01" value={dados.seguro} onChange={(e) => handleInputChange('seguro', e.target.value)} />
+                    <input type="text" value={getDisplayValue('seguro', dados.seguro)} onChange={(e) => handleInputChange('seguro', e.target.value)} />
                   </label>
                   <label>
                     Quantidade (V):
-                    <input type="number" value={dados.quantidade} onChange={(e) => handleInputChange('quantidade', e.target.value)} />
+                    <input type="text" value={getDisplayValue('quantidade', dados.quantidade)} onChange={(e) => handleInputChange('quantidade', e.target.value)} />
                   </label>
                 </div>
               </div>
@@ -176,15 +344,15 @@ function App() {
               <div className="input-group">
                 <h3>Alíquotas de Impostos (%)</h3>
                 <div className="form-row">
-                  <label>II: <input type="number" step="0.01" value={dados.aliqII} onChange={(e) => handleInputChange('aliqII', e.target.value)} /></label>
-                  <label>IPI: <input type="number" step="0.01" value={dados.aliqIPI} onChange={(e) => handleInputChange('aliqIPI', e.target.value)} /></label>
-                  <label>PIS: <input type="number" step="0.01" value={dados.aliqPIS} onChange={(e) => handleInputChange('aliqPIS', e.target.value)} /></label>
-                  <label>COFINS: <input type="number" step="0.01" value={dados.aliqCOFINS} onChange={(e) => handleInputChange('aliqCOFINS', e.target.value)} /></label>
+                  <label>II: <input type="text" value={getDisplayValue('aliqII', dados.aliqII)} onChange={(e) => handleInputChange('aliqII', e.target.value)} /></label>
+                  <label>IPI: <input type="text" value={getDisplayValue('aliqIPI', dados.aliqIPI)} onChange={(e) => handleInputChange('aliqIPI', e.target.value)} /></label>
+                  <label>PIS: <input type="text" value={getDisplayValue('aliqPIS', dados.aliqPIS)} onChange={(e) => handleInputChange('aliqPIS', e.target.value)} /></label>
+                  <label>COFINS: <input type="text" value={getDisplayValue('aliqCOFINS', dados.aliqCOFINS)} onChange={(e) => handleInputChange('aliqCOFINS', e.target.value)} /></label>
                 </div>
                 <div className="form-row">
-                  <label>PIS Crédito: <input type="number" step="0.01" value={dados.aliqPISCred} onChange={(e) => handleInputChange('aliqPISCred', e.target.value)} /></label>
-                  <label>COFINS Crédito: <input type="number" step="0.01" value={dados.aliqCOFINSCred} onChange={(e) => handleInputChange('aliqCOFINSCred', e.target.value)} /></label>
-                  <label>ICMS: <input type="number" step="0.01" value={dados.aliqICMS} onChange={(e) => handleInputChange('aliqICMS', e.target.value)} /></label>
+                  <label>PIS Crédito: <input type="text" value={getDisplayValue('aliqPISCred', dados.aliqPISCred)} onChange={(e) => handleInputChange('aliqPISCred', e.target.value)} /></label>
+                  <label>COFINS Crédito: <input type="text" value={getDisplayValue('aliqCOFINSCred', dados.aliqCOFINSCred)} onChange={(e) => handleInputChange('aliqCOFINSCred', e.target.value)} /></label>
+                  <label>ICMS: <input type="text" value={getDisplayValue('aliqICMS', dados.aliqICMS)} onChange={(e) => handleInputChange('aliqICMS', e.target.value)} /></label>
                 </div>
               </div>
 
@@ -193,11 +361,11 @@ function App() {
                 <div className="form-row">
                   <label>
                     Despesas Acessórias (N):
-                    <input type="number" step="0.01" value={dados.despesasAcessorias} onChange={(e) => handleInputChange('despesasAcessorias', e.target.value)} />
+                    <input type="text" value={getDisplayValue('despesasAcessorias', dados.despesasAcessorias)} onChange={(e) => handleInputChange('despesasAcessorias', e.target.value)} />
                   </label>
                   <label>
                     Despesas Aduaneiras (R):
-                    <input type="number" step="0.01" value={dados.despesasAduaneiras} onChange={(e) => handleInputChange('despesasAduaneiras', e.target.value)} />
+                    <input type="text" value={getDisplayValue('despesasAduaneiras', dados.despesasAduaneiras)} onChange={(e) => handleInputChange('despesasAduaneiras', e.target.value)} />
                   </label>
                 </div>
               </div>
