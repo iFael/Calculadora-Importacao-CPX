@@ -1,8 +1,8 @@
-# 📊 Calculadora de Importação
+# Calculadora de Importação
 
 Sistema web completo para substituir planilhas Excel de cálculo de custos de importação.
 
-## 🚀 Características
+## Características
 
 - **Frontend React com TypeScript** - Interface moderna e responsiva
 - **Backend Node.js/Express** - API robusta para cálculos
@@ -11,7 +11,7 @@ Sistema web completo para substituir planilhas Excel de cálculo de custos de im
 - **Interface Intuitiva** - Formulários organizados por categorias
 - **Formatação Brasileira** - Valores em Real e Dólar formatados corretamente
 
-## 🏗️ Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 calculadora-importacao/
@@ -26,7 +26,7 @@ calculadora-importacao/
 └── package.json           # Scripts principais
 ```
 
-## 📋 Funcionalidades
+## Funcionalidades
 
 ### Cálculos Implementados
 - **Valores Base**: Frete (USD), VMLE (USD), Taxa do Dólar
@@ -43,7 +43,7 @@ calculadora-importacao/
 - `T = F+G+J+M+N-Q+R` - Custo Total Real
 - E mais...
 
-## 🛠️ Instalação e Execução
+## Instalação e Execução
 
 ### Pré-requisitos
 - Node.js 16+ 
@@ -79,7 +79,7 @@ npm run dev:frontend
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
 
-## 🧮 Como Usar
+## Como Usar
 
 1. **Preencher Dados de Entrada**:
    - Frete e VMLE em USD
@@ -96,7 +96,7 @@ npm run dev:frontend
 
 4. **Validar**: Use "Validar contra Planilha Original" para verificar precisão
 
-## 📊 API Endpoints
+## API Endpoints
 
 ### `POST /api/calcular`
 Calcula custos de importação
@@ -119,7 +119,7 @@ Valida cálculos contra dados conhecidos da planilha
 ### `GET /api/health`
 Verifica status do servidor
 
-## 🎯 Valores de Teste (da planilha original)
+## Valores de Teste (da planilha original)
 
 - **Frete**: $1.196,50
 - **VMLE**: $12.720,00  
@@ -128,13 +128,13 @@ Verifica status do servidor
 - **Custo Total Real**: R$ 98.243,85
 - **Custo Unitário**: R$ 982,44
 
-## 🔧 Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 - **Frontend**: React 18, TypeScript, Axios, CSS3
 - **Backend**: Node.js, Express, CORS, Helmet
 - **Ferramentas**: Concurrently, Nodemon
 
-## 📈 Próximas Funcionalidades
+## Próximas Funcionalidades
 
 - [ ] Exportação para PDF/Excel
 - [ ] Histórico de cálculos
@@ -143,10 +143,10 @@ Verifica status do servidor
 - [ ] API de cotação automática
 - [ ] Salvamento local/nuvem
 
-## 🤝 Contribuição
+## Contribuição
 
 Este sistema foi desenvolvido para substituir completamente as planilhas Excel, mantendo exatamente os mesmos cálculos e fórmulas para garantir compatibilidade total.
 
-## 📞 Suporte
+## Suporte
 
 Para dúvidas sobre cálculos ou funcionalidades, consulte os arquivos de referência das planilhas originais ou verifique os logs da validação automática.
