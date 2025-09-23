@@ -82,6 +82,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+  const [autoCalculateEnabled, setAutoCalculateEnabled] = useState(true);
 
   useEffect(() => {
     const checkServerStatus = async () => {
@@ -102,12 +103,60 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // useEffect para cálculo automático em tempo real
+  useEffect(() => {
+    if (!autoCalculateEnabled || serverStatus !== 'online') return;
+
+    // Debounce: aguardar 500ms sem mudanças antes de calcular
+    const timeoutId = setTimeout(() => {
+      calcularAutomatico();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [dados, autoCalculateEnabled, serverStatus]);
+
+  const calcularAutomatico = async () => {
+    if (loading || serverStatus !== 'online') return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      // Converter strings vazias para números antes de enviar
+      const dadosParaEnvio = Object.keys(dados).reduce((acc, key) => {
+        const valor = dados[key as keyof DadosCalculadora];
+        if (typeof valor === 'string') {
+          if (valor === '') {
+            acc[key as keyof DadosCalculadora] = 0;
+          } else {
+            // Converter vírgula para ponto e tentar converter para número
+            const valorConvertido = parseFloat(valor.replace(',', '.'));
+            acc[key as keyof DadosCalculadora] = isNaN(valorConvertido) ? 0 : valorConvertido;
+          }
+        } else {
+          acc[key as keyof DadosCalculadora] = Number(valor);
+        }
+        return acc;
+      }, {} as any);
+
+      const response = await axios.post(`${API_BASE_URL}/calcular`, dadosParaEnvio);
+      if (response.data.success) {
+        setResultado(response.data.dados);
+      } else {
+        setError(response.data.error || 'Erro no cálculo');
+      }
+    } catch (error: any) {
+      setError(error.response?.data?.error || 'Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatCurrency = (value: number, currency: 'BRL' | 'USD' = 'BRL'): string => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
-      maximumFractionDigits: 6
+      maximumFractionDigits: 2
     }).format(value);
   };
 
@@ -174,66 +223,40 @@ function App() {
   const handleInputChange = (campo: keyof DadosCalculadora, valor: string) => {
     if (isMonetaryField(campo)) {
       // Para campos monetários, aplicar formatação
-      // Se o usuário está deletando (valor vazio), limpar o campo
-      if (valor === '') {
+      if (valor === '' || valor.replace(/\D/g, '') === '') {
+        // Se o usuário apagou tudo, campo visualmente vazio, mas valor zero para cálculo
         setValoresFormatados(prev => ({ ...prev, [campo]: '' }));
         setDados(prev => ({ ...prev, [campo]: 0 }));
         return;
       }
-      
       // Extrair apenas dígitos do valor digitado
       const novosDigitos = valor.replace(/\D/g, '');
-      
-      // Se não há dígitos, limpar
-      if (!novosDigitos) {
-        setValoresFormatados(prev => ({ ...prev, [campo]: '' }));
-        setDados(prev => ({ ...prev, [campo]: 0 }));
-        return;
-      }
-      
       // Formatar o valor
       const valorFormatado = formatMonetaryValue(novosDigitos);
       const valorNumerico = parseMonetaryValue(valorFormatado);
-      
       setValoresFormatados(prev => ({ ...prev, [campo]: valorFormatado }));
       setDados(prev => ({ ...prev, [campo]: valorNumerico }));
     } else {
-      // Para campos de porcentagem e quantidade, permitir entrada natural de decimais
-      if (valor === '') {
-        setDados(prev => ({ ...prev, [campo]: '' }));
+      // Para campos de porcentagem e quantidade
+      if (valor === '' || valor.replace(/[^0-9.,]/g, '') === '') {
+        // Se o usuário apagou tudo, campo visualmente vazio, mas valor zero para cálculo
+        setDados(prev => ({ ...prev, [campo]: 0 }));
         return;
       }
-      
       // Permitir apenas dígitos, vírgula e ponto
       let valorLimpo = valor.replace(/[^0-9.,]/g, '');
-      
-      // Se não há caracteres válidos, limpar
-      if (!valorLimpo) {
-        setDados(prev => ({ ...prev, [campo]: '' }));
-        return;
-      }
-      
       // Normalizar separadores decimais - converter pontos para vírgulas (padrão brasileiro)
       valorLimpo = valorLimpo.replace(/\./g, ',');
-      
       // Permitir apenas uma vírgula
       const partesVirgula = valorLimpo.split(',');
       if (partesVirgula.length > 2) {
-        // Se há mais de uma vírgula, manter apenas a primeira
         valorLimpo = partesVirgula[0] + ',' + partesVirgula.slice(1).join('');
       }
-      
-      // Aplicar lógica de remoção de zeros à esquerda APENAS se:
-      // 1. Começa com zero
-      // 2. Tem mais de um caractere
-      // 3. NÃO é um decimal válido (0,X)
-      // 4. O segundo caractere não é vírgula
+      // Aplicar lógica de remoção de zeros à esquerda
       let valorProcessado = valorLimpo;
       if (valorProcessado.length > 1 && 
           valorProcessado.startsWith('0') && 
           valorProcessado.charAt(1) !== ',') {
-        
-        // Encontrar o primeiro dígito não-zero ou vírgula
         let indiceInicioValido = 0;
         for (let i = 0; i < valorProcessado.length; i++) {
           if (valorProcessado.charAt(i) !== '0') {
@@ -241,16 +264,12 @@ function App() {
             break;
           }
         }
-        
-        // Se todos são zeros, manter apenas um zero
         if (indiceInicioValido === 0 && valorProcessado.replace(/0/g, '').replace(/,/g, '') === '') {
           valorProcessado = valorProcessado.includes(',') ? valorProcessado : '0';
         } else if (indiceInicioValido > 0) {
           valorProcessado = valorProcessado.substring(indiceInicioValido);
         }
       }
-      
-      // Aceitar qualquer entrada válida (números, vírgula, parciais)
       setDados(prev => ({ ...prev, [campo]: valorProcessado }));
     }
   };
@@ -305,6 +324,7 @@ function App() {
         </header>
 
         <main className="main-content">
+          {/* Removido o controle de cálculo automático */}
           <div className="content-grid">
             <section className="input-section">
               <h2>Calculadora de Importação</h2>
@@ -370,16 +390,22 @@ function App() {
                 </div>
               </div>
 
-              <button onClick={calcular} className="btn btn-primary btn-large" disabled={loading || serverStatus !== 'online'}>
-                {loading ? '🔄 Calculando...' : 'Calcular Custos'}
-              </button>
+
+              {/* Mensagem de atualização automática removida */}
 
               {error && <div className="error-message">{error}</div>}
             </section>
 
             {resultado && (
               <section className="results-section">
-                <h2>Resultados</h2>
+                <h2>
+                  Resultados 
+                  {autoCalculateEnabled && loading && (
+                    <span style={{ fontSize: '0.8rem', color: '#667eea', marginLeft: '0.5rem' }}>
+                      🔄 Atualizando...
+                    </span>
+                  )}
+                </h2>
                 <div className="results-grid">
                   <div className="result-card">
                     <h3>Valores Base</h3>

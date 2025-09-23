@@ -95,31 +95,31 @@ class CalculadoraImportacao {
       quantidade,
       
       // Cálculos intermediários
-      totalBRL: parseFloat(totalBRL.toFixed(4)),
-      baseBC: parseFloat(baseBC.toFixed(4)),
+      totalBRL: parseFloat(totalBRL.toFixed(2)),
+      baseBC: parseFloat(baseBC.toFixed(2)),
       
       // Impostos
       valorII: parseFloat(valorII.toFixed(2)),
-      pisImp: parseFloat(pisImp.toFixed(4)),
-      pisCred: parseFloat(pisCred.toFixed(4)),
-      custoPIS: parseFloat(custoPIS.toFixed(4)),
-      cofinsImp: parseFloat(cofinsImp.toFixed(4)),
-      cofinsCred: parseFloat(cofinsCred.toFixed(4)),
-      custoCOFINS: parseFloat(custoCOFINS.toFixed(4)),
+      pisImp: parseFloat(pisImp.toFixed(2)),
+      pisCred: parseFloat(pisCred.toFixed(2)),
+      custoPIS: parseFloat(custoPIS.toFixed(2)),
+      cofinsImp: parseFloat(cofinsImp.toFixed(2)),
+      cofinsCred: parseFloat(cofinsCred.toFixed(2)),
+      custoCOFINS: parseFloat(custoCOFINS.toFixed(2)),
       valorIPI: parseFloat(valorIPI.toFixed(2)),
       baseICMS: parseFloat(baseICMS.toFixed(2)),
-      valorICMS: parseFloat(valorICMS.toFixed(5)),
+      valorICMS: parseFloat(valorICMS.toFixed(2)),
       
       // Despesas
       despesasAcessorias,
       despesasAduaneiras,
       
       // Totais finais
-      valorTotalNF: parseFloat(valorTotalNF.toFixed(4)),
-      custoTotalReal: parseFloat(custoTotalReal.toFixed(6)),
-      custoTotalDolar: parseFloat(custoTotalDolar.toFixed(6)),
-      custoUnitarioDolar: parseFloat(custoUnitarioDolar.toFixed(6)),
-      custoUnitarioReal: parseFloat(custoUnitarioReal.toFixed(6))
+      valorTotalNF: parseFloat(valorTotalNF.toFixed(2)),
+      custoTotalReal: parseFloat(custoTotalReal.toFixed(2)),
+      custoTotalDolar: parseFloat(custoTotalDolar.toFixed(2)),
+      custoUnitarioDolar: parseFloat(custoUnitarioDolar.toFixed(2)),
+      custoUnitarioReal: parseFloat(custoUnitarioReal.toFixed(2))
     };
   }
 }
@@ -139,23 +139,51 @@ app.get('/api/health', (req, res) => {
 app.post('/api/calcular', (req, res) => {
   try {
     const dados = req.body;
-    
-    // Validações básicas
-    if (!dados.frete || !dados.vmle) {
-      return res.status(400).json({ 
-        error: 'Frete e VMLE são obrigatórios',
-        details: 'Campos obrigatórios: frete (USD), vmle (USD)'
+
+    // Permitir frete e vmle igual a zero (não bloquear)
+    // Se todos os campos forem zero, retornar todos os resultados como zero
+    const todosZero = Object.values(dados).every(v => Number(v) === 0);
+    if (todosZero) {
+      return res.json({
+        success: true,
+        dados: {
+          frete: 0,
+          vmle: 0,
+          taxaDolar: 0,
+          seguro: 0,
+          quantidade: 0,
+          totalBRL: 0,
+          baseBC: 0,
+          valorII: 0,
+          pisImp: 0,
+          pisCred: 0,
+          custoPIS: 0,
+          cofinsImp: 0,
+          cofinsCred: 0,
+          custoCOFINS: 0,
+          valorIPI: 0,
+          baseICMS: 0,
+          valorICMS: 0,
+          despesasAcessorias: 0,
+          despesasAduaneiras: 0,
+          valorTotalNF: 0,
+          custoTotalReal: 0,
+          custoTotalDolar: 0,
+          custoUnitarioDolar: 0,
+          custoUnitarioReal: 0
+        },
+        timestamp: new Date().toISOString()
       });
     }
 
     const resultado = CalculadoraImportacao.calcular(dados);
-    
+
     res.json({
       success: true,
       dados: resultado,
       timestamp: new Date().toISOString()
     });
-    
+
   } catch (error) {
     console.error('Erro no cálculo:', error);
     res.status(500).json({ 
